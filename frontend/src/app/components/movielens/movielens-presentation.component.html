@@ -1,0 +1,131 @@
+<div class="presentation-container">
+  <div class="slide-container">
+    <!-- Genre Distribution Bar Chart Slide -->
+    <div class="slide" [class.active]="currentSlide === 0">
+      <h2>Genre Distribution (Bar Chart)</h2>
+      <div class="chart-container" #genreChart></div>
+      <div class="chart-explanation">
+        <h3>About this chart</h3>
+        <p>This bar chart shows the distribution of movies by genre. Each bar represents the number of movies in a specific genre. Use this chart to quickly see which genres are most and least common in the dataset.</p>
+      </div>
+    </div>
+
+    <!-- Genre Distribution Pie Chart Slide -->
+    <div class="slide" [class.active]="currentSlide === 1">
+      <h2>Genre Distribution (Pie Chart)</h2>
+      <app-genre-pie-chart *ngIf="movieStats" [genreDistribution]="movieStats.genreDistribution"></app-genre-pie-chart>
+      <div class="chart-explanation">
+        <h3>About this chart</h3>
+        <p>This pie chart visualizes the proportion of movies in each genre. Each slice represents a genre, and its size corresponds to the number of movies. Use this chart to compare the relative popularity of genres.</p>
+      </div>
+    </div>
+
+    <!-- User Clusters Slide -->
+    <div class="slide" [class.active]="currentSlide === 2">
+      <h2>User Clusters</h2>
+      <div #clustersChart class="chart-container"></div>
+      <div class="chart-explanation">
+        <h3>About this chart</h3>
+        <p>
+          This chart displays clusters of users based on their movie genre preferences, calculated as follows:
+        </p>
+        <ul>
+          <li>For each user, their ratings are aggregated by genre to form a personalized genre preference profile, normalized so that the sum of preferences equals 1.</li>
+          <li>Each user's genre preferences are projected into a 2D space using a trigonometric transformation (summing genre weights with cosine and sine functions for x and y coordinates).</li>
+          <li>The K-Means clustering algorithm (with k=5) is then applied to these 2D points to group users into clusters with similar taste profiles.</li>
+        </ul>
+        <p>
+          Each point represents a user, and colors indicate different clusters. Use this chart to explore how users group together by their genre preferences.
+        </p>
+      </div>
+    </div>
+
+    <!-- User Clusters Size Comparison Slide -->
+    <div class="slide" [class.active]="currentSlide === 3">
+      <h2>User Clusters Size Comparison</h2>
+      <app-user-clusters-chart
+      class="chart-container"
+        *ngIf="clusterInterpretations && clusterInterpretations.length > 0"
+        [clusterInterpretations]="clusterInterpretations"
+        [getClusterColor]="getClusterColor"
+        ></app-user-clusters-chart>
+      <div class="chart-explanation">
+        <h3>About this chart</h3>
+        <p>This chart compares the sizes of different user clusters. Each bar or segment represents a cluster, and its size shows the number of users in that group. Use this chart to see which clusters are most common.</p>
+      </div>
+    </div>
+
+    <!-- User Clusters PCA Slide -->
+    <div class="slide" [class.active]="currentSlide === 4">
+      <h2>User Clusters (PCA)</h2>
+      <div #clustersPcaChart class="chart-container"></div>
+      <div class="chart-explanation">
+        <h3>About this chart</h3>
+        <p>
+          This chart displays clusters of users based on their movie genre preferences, but uses Principal Component Analysis (PCA) for dimensionality reduction:
+        </p>
+        <ul>
+          <li>Each user's genre preference profile is represented as a vector, where each dimension corresponds to a genre and the value is the normalized preference for that genre.</li>
+          <li>PCA is applied to all user vectors to reduce the high-dimensional data to two principal components (PC1 and PC2), capturing the most significant variation in user taste.</li>
+          <li>The K-Means clustering algorithm (with k=5) is then applied to the 2D PCA-transformed points to group users into clusters with similar taste profiles.</li>
+        </ul>
+        <p>
+          Each point represents a user in the PCA-reduced space, and colors indicate different clusters. This approach can reveal more subtle patterns in user preferences by considering all genres simultaneously.
+        </p>
+      </div>
+    </div>
+
+    <!-- Rating Patterns Slide -->
+    <div class="slide" [class.active]="currentSlide === 5">
+      <h2>Rating Patterns Over Time</h2>
+      <mat-form-field appearance="fill" style="width: 300px; margin-bottom: 16px;">
+        <mat-label>Genre</mat-label>
+        <mat-select [value]="selectedGenre" (selectionChange)="onGenreChange($event.value)">
+          <mat-option value="">All genres</mat-option>
+          <mat-option *ngFor="let genre of genres" [value]="genre">{{ genre }}</mat-option>
+        </mat-select>
+      </mat-form-field>
+      <div #temporalChart class="chart-container"></div>
+      <div class="chart-explanation">
+        <h3>About this chart</h3>
+        <p>This chart shows how movie ratings change over time, optionally filtered by genre. Use the dropdown to select a genre and see trends in rating patterns for that genre or for all movies.</p>
+      </div>
+    </div>
+
+    <!-- Movie Rating Lifecycle Slide -->
+    <div class="slide" [class.active]="currentSlide === 6">
+      <h2>Movie Rating Lifecycle</h2>
+      <app-movie-lifecycle-chart *ngIf="!!movies && movies.length > 0"
+        [movies]="movies"
+        [selectedMovieId]="selectedMovieId"
+        (movieSelected)="onMovieSelected($event)">
+      </app-movie-lifecycle-chart>
+      <div class="chart-explanation">
+        <h3>About this chart</h3>
+        <p>This chart visualizes the lifecycle of a selected movie based on user ratings over time. Search for a movie using the search box. The chart displays the number of ratings, average rating, and individual ratings over time. Use the legend to toggle elements and hover for details.</p>
+      </div>
+    </div>
+  </div>
+
+  <!-- Navigation Controls -->
+  <div class="navigation-controls">
+    <button mat-icon-button (click)="previousSlide()" [disabled]="currentSlide === 0">
+      <mat-icon>arrow_back</mat-icon>
+    </button>
+    <span class="slide-indicator">{{ currentSlide + 1 }} / {{ totalSlides }}</span>
+    <button mat-icon-button (click)="nextSlide()" [disabled]="currentSlide === totalSlides - 1">
+      <mat-icon>arrow_forward</mat-icon>
+    </button>
+  </div>
+</div>
+
+<!-- Cluster Genre Pie Chart Modal -->
+<div *ngIf="showClusterPieModal" class="modal-overlay">
+  <div class="modal-content">
+    <button mat-icon-button class="close-btn" (click)="showClusterPieModal = false">
+      <mat-icon>close</mat-icon>
+    </button>
+    <h2>{{ clusterPieTitle }}</h2>
+    <app-genre-pie-chart [genreDistribution]="clusterPieData"></app-genre-pie-chart>
+  </div>
+</div>
